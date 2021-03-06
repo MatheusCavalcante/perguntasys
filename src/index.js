@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const connection = require('../database/database');
-const perguntaModel = require('../database/Pergunta');
+const Pergunta = require('../database/Pergunta');
 
 connection
     .authenticate()
@@ -22,7 +22,15 @@ app.use(express.json());
 
 //Rotas
 app.get('/', (req, res) => {
-    res.render('index');
+    Pergunta.findAll({
+        raw: true, order: [
+            ['id', 'DESC']
+        ]
+    }).then(perguntas => {
+        res.render('index', {
+            perguntas: perguntas
+        });
+    });
 });
 
 app.get('/perguntar', (req, res) => {
@@ -31,7 +39,27 @@ app.get('/perguntar', (req, res) => {
 
 app.post('/salvarpergunta', (req, res) => {
     const { titulo, descricao } = req.body;
-    res.send(`Formulário recebido com titulo: ${titulo} e descricao: ${descricao}`);
+    Pergunta.create({
+        titulo: titulo,
+        descricao: descricao
+    }).then(() => {
+        res.redirect('/');
+    });
+});
+
+app.get('/pergunta/:id', (req, res) => {
+    const { id } = req.params;
+    Pergunta.findOne({
+        where: { id: id }
+    }).then(pergunta => {
+        if (pergunta != undefined) {
+            res.render('pergunta', {
+                pergunta: pergunta
+            });
+        } else {
+            res.redirect('/');
+        }
+    });
 });
 
 app.listen(3333, () => {
