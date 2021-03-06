@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const connection = require('../database/database');
 const Pergunta = require('../database/Pergunta');
+const Resposta = require('../database/Resposta');
 
 connection
     .authenticate()
@@ -53,14 +54,32 @@ app.get('/pergunta/:id', (req, res) => {
         where: { id: id }
     }).then(pergunta => {
         if (pergunta != undefined) {
-            res.render('pergunta', {
-                pergunta: pergunta
+
+            Resposta.findAll({
+                where: { perguntaId: pergunta.id },
+                order: [['id', 'DESC']]
+            }).then(resposta => {
+                res.render('pergunta', {
+                    pergunta: pergunta,
+                    resposta: resposta
+                });
             });
         } else {
             res.redirect('/');
         }
     });
 });
+
+app.post('/responder', (req, res) => {
+    const { corpo, pergunta } = req.body;
+
+    Resposta.create({
+        corpo: corpo,
+        perguntaId: pergunta
+    }).then(() => {
+        res.redirect('/pergunta/' + pergunta)
+    });
+})
 
 app.listen(3333, () => {
     console.log('🚀 Aplicação no ar!')
